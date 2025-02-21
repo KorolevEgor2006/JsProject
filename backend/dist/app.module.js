@@ -10,12 +10,47 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
+const auth_module_1 = require("./auth/auth.module");
+const users_module_1 = require("./users/users.module");
+const typeorm_1 = require("@nestjs/typeorm");
+const config_1 = require("@nestjs/config");
+const user_entity_1 = require("./orm/user.entity");
+const tasks_module_1 = require("./tasks/tasks.module");
+const task_entity_1 = require("./orm/task.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [],
+        imports: [
+            auth_module_1.AuthModule,
+            users_module_1.UsersModule,
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+            }),
+            typeorm_1.TypeOrmModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => ({
+                    type: 'postgres',
+                    host: configService.get('DB_HOST'),
+                    port: configService.get('DB_PORT'),
+                    username: configService.get('DB_USER'),
+                    password: configService.get('DB_PASSWORD'),
+                    database: configService.get('DB_DATABASE'),
+                    cache: true,
+                    entities: [user_entity_1.User, task_entity_1.Task],
+                    maxQueryExecutionTime: 5000,
+                    extra: {
+                        max: 50,
+                        connectionTimeoutMillis: 1000,
+                        idleTimeoutMillis: 30000,
+                    },
+                }),
+                inject: [config_1.ConfigService],
+            }),
+            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, task_entity_1.Task]),
+            tasks_module_1.TasksModule,
+        ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })
